@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Bridge v2",
+  "version": "2.0.0",
+  "description": "Multi-profile Chrome bridge for Claude Code MCP",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "activeTab",
+    "offscreen",
+    "storage",
+    "identity",
+    "identity.email",
+    "alarms",
+    "debugger"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Chrome Bridge v2"
+  }
+}

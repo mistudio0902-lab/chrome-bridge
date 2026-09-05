@@ -1,0 +1,5 @@
+node_modules/
+*.log
+wrapper-debug.log
+.env
+.DS_Store

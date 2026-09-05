@@ -1,0 +1,19 @@
+{
+  "name": "chrome-bridge",
+  "version": "1.0.0",
+  "description": "Drive your already-logged-in Chrome profiles from Claude Code, Codex, and other MCP clients. Not a headless browser.",
+  "main": "server.js",
+  "type": "module",
+  "bin": { "chrome-bridge": "./call.mjs" },
+  "scripts": {
+    "hub": "node hub.js",
+    "test": "node test/multiprofile.test.mjs && node test/launch-profile.test.mjs"
+  },
+  "keywords": ["mcp", "claude-code", "chrome", "browser-automation", "ai-agent", "cdp", "model-context-protocol"],
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "ws": "^8.20.0"
+  }
+}

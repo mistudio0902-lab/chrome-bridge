@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Chrome Bridge v2</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", sans-serif; width: 320px; padding: 12px; margin: 0; }
+  h1 { font-size: 14px; margin: 0 0 10px; }
+  label { display: block; font-size: 12px; color: #555; margin-top: 8px; }
+  input { width: 100%; padding: 6px 8px; font-size: 13px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+  .row { font-size: 12px; margin: 6px 0; color: #333; word-break: break-all; }
+  .ok { color: #0a7d20; }
+  .bad { color: #b30000; }
+  button { margin-top: 10px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  .muted { color: #888; font-size: 11px; }
+</style>
+</head>
+<body>
+  <h1>Chrome Bridge v2</h1>
+  <div class="row"><b>Email:</b> <span id="email">-</span></div>
+  <div class="row"><b>Profile:</b> <span id="profileName">-</span></div>
+  <div class="row"><b>Status:</b> <span id="status">-</span></div>
+  <div class="row"><b>ProfileId:</b> <span id="profileId">-</span></div>
+
+  <label for="alias">Alias (上書き)</label>
+  <input id="alias" placeholder="例: work, personal" />
+
+  <button id="save">Save</button>
+  <button id="reconnect">Reconnect</button>
+
+  <p class="muted">Server: ws://127.0.0.1:9239</p>
+  <script src="popup.js"></script>
+</body>
+</html>
