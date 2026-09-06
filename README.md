@@ -13,7 +13,7 @@ Claude Code ──stdio──▶ server.js ──HTTP──▶ hub.js ──WebS
 
 ## 何ができるか
 
-38個のMCPツールを提供します。
+41個のMCPツールを提供します。
 
 | 分類 | ツール |
 |---|---|
@@ -23,7 +23,7 @@ Claude Code ──stdio──▶ server.js ──HTTP──▶ hub.js ──WebS
 | 読み取り | `read_page` `get_page_text` `snapshot` `find` `screenshot` `read_console_messages` `read_network_requests` |
 | 操作 | `click` `click_by_text` `hover` `type_text` `fill` `set_select` `press_key` `scroll` `upload_file` |
 | 低レベル | `real_click` `real_type` `evaluate` `evaluate_debugger` `cdp` `ensure_visible` `detach_debugger` |
-| その他 | `resize_window` `gif_start` `ping` |
+| その他 | `resize_window` `gif_start` `ping` `chrome_bridge_health` |
 
 ### `real_click` / `real_type` と `evaluate_debugger` がある理由
 
