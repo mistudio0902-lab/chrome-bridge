@@ -1,10 +1,14 @@
 # Chrome Bridge
 
-**AIエージェントから、ログイン済みのChromeをそのまま操作する。**
+**複数のChromeプロファイルを、MCPセッションごとに独立して同時操作する。**
 
-Claude Code / Codex / その他のMCP対応クライアントから、あなたが普段使っているChromeプロファイル（ログイン済みのセッション、Cookie、拡張機能つき）を直接動かすためのローカルブリッジです。
+Claude Code / Codex / その他のMCP対応クライアントから、すでに開いてログイン済みのChromeプロファイルを操作するためのローカルブリッジです。
 
-ヘッドレスブラウザではありません。**いま開いているChromeそのもの**を操作します。だからログインし直す必要がなく、2段階認証も、Cookieのコピーも要りません。
+### 先に: 公式の chrome-devtools-mcp で足りるか確認してください
+
+単に「起動中のChromeに繋ぎたい」だけなら、公式の [chrome-devtools-mcp](https://github.com/ChromeDevTools/chrome-devtools-mcp) で足ります。`--autoConnect` `--browserUrl` `--wsEndpoint` `--userDataDir` があり、すでに動いているChromeにも、指定したユーザーデータディレクトリにも接続できます。DevTools機能（トレース、ネットワーク／コンソール調査）まで含めて、公式のほうが圧倒的に充実しています。**まず公式を試してください。**
+
+このブリッジが埋めるのは1点だけです。**プロファイルが複数あり、それぞれ別のアカウントでログインしていて、それらを同時に、セッションごとに独立して扱いたい場合。** 常駐ハブが各プロファイルの拡張機能をルーティングし、MCPセッションはそれぞれ自分の対象プロファイルを持ちます。Chromeを再起動したり、リモートデバッグを有効化したり、Cookieを移し替えたりせずに済みます。
 
 ```
 Claude Code ──stdio──▶ server.js ──HTTP──▶ hub.js ──WebSocket──▶ Chrome拡張 ──▶ あなたのChrome
@@ -25,13 +29,17 @@ Claude Code ──stdio──▶ server.js ──HTTP──▶ hub.js ──WebS
 | 低レベル | `real_click` `real_type` `evaluate` `evaluate_debugger` `cdp` `ensure_visible` `detach_debugger` |
 | その他 | `resize_window` `gif_start` `ping` `chrome_bridge_health` |
 
-### `real_click` / `real_type` と `evaluate_debugger` がある理由
+### `real_click` / `real_type` / `evaluate_debugger` — これは検知回避の機能です
 
-JavaScriptの `element.click()` が効かないサイトがあります。ReactやWixで作られたフォームは、信頼できるマウスイベント（`isTrusted: true`）しか受け付けないことがあるためです。`real_click` はChrome DevTools Protocol経由で実際の入力イベントを送るので、こうしたページでも動きます。
+互換性のための機能ではありません。使う前に読んでください。
 
-同様に、Trusted Typesを有効にしたサイト（Googleフォームなど）では `evaluate` がブロックされます。`evaluate_debugger` はDebuggerドメイン経由で評価するので、そこを通り抜けられます。
+`real_click` / `real_type` は Chrome DevTools Protocol 経由で `isTrusted: true` の入力イベントを送ります。ReactやWixのフォームが合成イベントを拒否する場合に動くようになりますが、**同時に、ページ側が人間とエージェントを区別するための数少ない手掛かりを消します。** 認証済みのプロファイルと組み合わさると、これは「クリックが通るようになる」以上の能力です。
 
-これらは実際に壁にぶつかって足したものです。
+`evaluate_debugger` も同様に、Trusted Types を有効にしたページ（Googleフォームなど）で `evaluate` がブロックされるのを、Debuggerドメイン経由で迂回します。
+
+対象サイトの利用規約と、その操作を自分の名義で行ってよいかを確認したうえで使ってください。
+
+補足として、公式の chrome-devtools-mcp は Puppeteer 経由で CDP 入力を送るため、`element.click()` が無視される問題自体が起きません。この機能が必要なのは、このブリッジが素のJavaScriptクリック（`click`）も併せて提供しているためです。
 
 ## 複数プロファイルの同時利用
 
@@ -134,6 +142,19 @@ node call.mjs launch_profile profile="Profile 10" url=https://example.com
 | `CHROME_BRIDGE_HTTP_PORT` | `9240` | ハブのHTTPポート |
 | `CHROME_BRIDGE_PROFILE` | — | セッション初期の対象プロファイル |
 
+## ツールの危険度と再試行
+
+読み取り専用のツールと、状態を変えるツールを分けて扱ってください。
+
+| 区分 | ツール | 再試行 |
+|---|---|---|
+| 読み取り専用 | `read_page` `get_page_text` `snapshot` `find` `screenshot` `read_console_messages` `read_network_requests` `tabs_list` `ping` `chrome_bridge_health` | 安全 |
+| 状態変更 | `real_click` `real_type` `click` `click_by_text` `type_text` `fill` `set_select` `press_key` `scroll` `upload_file` `evaluate` `evaluate_debugger` `cdp` `navigate` | **盲目的に再試行しない** |
+
+**既知の再現性の欠陥**: `real_click` を送った直後に拡張機能のWebSocketが切れると、ページ側はクリックを処理済みなのに、MCP呼び出しは切断エラーで失敗します。冪等キーも重複排除も実装していません。
+
+状態変更ツールが切断エラーで失敗した場合は、再接続してからページの状態（またはネットワーク／遷移の結果）を確認し、本当にもう一度実行してよいかを判断してください。エラーに出る「retry in 5s」は読み取り系を想定した文言で、状態変更ツールには当てはまりません。
+
 ## つまずきやすいところ
 
 実運用で踏んだものです。
@@ -180,4 +201,6 @@ MIT
 
 ## 由来
 
-25個の個人プロジェクトを1人で運用する中で、AIエージェントに「ログイン済みのブラウザ」を触らせる必要があって作りました。ヘッドレスブラウザでは、2段階認証とCookieの持ち回りで毎回止まるためです。実際に使いながら、動かなかったところを1つずつ潰しています。
+25個の個人プロジェクトを1人で運用する中で、AIエージェントに「ログイン済みのブラウザ」を触らせる必要があって作りました。使い分けたいプロファイルが複数あり、それらを同時に扱いたかったのが理由です。
+
+公開後、r/mcp で「公式の chrome-devtools-mcp でも既存セッションに接続できる」と指摘をもらい、そのとおりだったので、上の説明を書き直しました。当初は「ヘッドレスではない」ことを差分として書いていましたが、それは公式でもできます。残る差分は複数プロファイルの同時・独立操作だけです。
